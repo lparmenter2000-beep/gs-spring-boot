@@ -1,7 +1,14 @@
 pipeline {
     agent any
 
+    environment {
+        NEXUS_URL = "http://localhost:8081"    
+        NEXUS_REPO = "maven-releases"
+        NEXUS_CRED = "nexus-admin"   // Jenkins credential ID
+    }
+
     stages {
+
         stage('Clone Repo') {
             steps {
                 checkout scm
@@ -10,15 +17,32 @@ pipeline {
 
         stage('Build JAR') {
             steps {
-                dir('complete') {
-                    sh "./mvnw clean package"
-                }
+                sh "chmod +x mvnw"
+                sh "./mvnw clean package"
             }
         }
 
-        stage('Archive Artifact') {
+        stage('Upload to Nexus') {
             steps {
-                archiveArtifacts artifacts: 'complete/target/*.jar', fingerprint: true
+                script {
+                    def jarFile = sh(script: "ls initial/target/*.jar", returnStdout: true).trim()
+                    echo "Uploading: ${jarFile}"
+
+                    nexusArtifactUploader(
+                        nexusVersion: 'nexus3',
+                        protocol: 'http',
+                        nexusUrl: "localhost:8081",
+                        groupId: 'com.example',
+                        version: '1.0.0',
+                        repository: "maven-releases",
+                        credentialsId: "nexus-admin",
+                        artifacts: [[
+                            artifactId: 'springboot-helloworld',
+                            type: 'jar',
+                            file: jarFile
+                        ]]
+                    )
+                }
             }
         }
     }

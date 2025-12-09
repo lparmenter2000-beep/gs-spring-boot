@@ -1,12 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        NEXUS_URL = "http://localhost:8081"    
-        NEXUS_REPO = "maven-releases"
-        NEXUS_CRED = "nexus-admin"   // Jenkins credential ID
-    }
-
     stages {
 
         stage('Clone Repo') {
@@ -17,32 +11,26 @@ pipeline {
 
         stage('Build JAR') {
             steps {
-                sh "chmod +x mvnw"
-                sh "./mvnw clean package"
+                sh "cd initial && chmod +x mvnw"
+                sh "cd initial && ./mvnw clean package"
             }
         }
 
         stage('Upload to Nexus') {
             steps {
-                script {
-                    def jarFile = sh(script: "ls initial/target/*.jar", returnStdout: true).trim()
-                    echo "Uploading: ${jarFile}"
-
-                    nexusArtifactUploader(
-                        nexusVersion: 'nexus3',
-                        protocol: 'http',
-                        nexusUrl: "localhost:8081",
-                        groupId: 'com.example',
-                        version: '1.0.0',
-                        repository: "maven-releases",
-                        credentialsId: "nexus-admin",
-                        artifacts: [[
-                            artifactId: 'springboot-helloworld',
-                            type: 'jar',
-                            file: jarFile
-                        ]]
-                    )
+                withCredentials([usernamePassword(credentialsId: 'nexus-admin', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh """
+                        curl -v -u $USERNAME:$PASSWORD \\
+                        --upload-file initial/target/*.jar \\
+                        http://localhost:8081/repository/maven-releases/com/example/springboot-helloworld/1.0.0/springboot-helloworld-1.0.0.jar
+                    """
                 }
+            }
+        }
+
+        stage('Archive Artifact') {
+            steps {
+                archiveArtifacts artifacts: 'initial/target/*.jar', fingerprint: true
             }
         }
     }

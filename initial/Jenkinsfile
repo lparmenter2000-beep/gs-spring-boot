@@ -10,8 +10,8 @@ pipeline {
 
         stage('Build JAR') {
             steps {
-                sh "chmod +x mvnw"
-                sh "./mvnw clean package"
+                sh "chmod +x initial/mvnw"
+                sh "cd initial && ./mvnw clean package"
             }
         }
 
@@ -19,8 +19,11 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'nexus-admin', usernameVariable: 'USR', passwordVariable: 'PASS')]) {
                     sh """
+                        cd initial
+                        JAR_FILE=\$(ls target/*-SNAPSHOT.jar)
+
                         curl -v -u $USR:$PASS \
-                        --upload-file initial/target/*-SNAPSHOT.jar \
+                        --upload-file \$JAR_FILE \
                         http://host.docker.internal:8081/repository/maven-releases/com/example/app/1.0.0/app-1.0.0.jar
                     """
                 }

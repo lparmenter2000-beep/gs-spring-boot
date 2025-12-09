@@ -17,16 +17,16 @@ pipeline {
         }
 
         stage('Upload to Nexus') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'nexus-admin', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                    sh """
-                        curl -v -u $USERNAME:$PASSWORD \\
-                        --upload-file initial/target/*.jar \\
-                        http://localhost:8081/repository/maven-releases/com/example/springboot-helloworld/1.0.0/springboot-helloworld-1.0.0.jar
-                    """
-                }
-            }
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'nexus-admin', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+            sh """
+            curl -v -u $USER:$PASS --upload-file initial/target/*.jar \
+            http://localhost:8081/repository/maven-releases/com/example/app/1.0.0/app-1.0.0.jar
+            """
         }
+    }
+}
+
 
         stage('Archive Artifact') {
             steps {

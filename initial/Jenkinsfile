@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     stages {
-
         stage('Clone Repo') {
             steps {
                 checkout scm
@@ -11,22 +10,22 @@ pipeline {
 
         stage('Build JAR') {
             steps {
-                sh "cd initial && chmod +x mvnw"
-                sh "cd initial && ./mvnw clean package"
+                sh "chmod +x mvnw"
+                sh "./mvnw clean package"
             }
         }
 
         stage('Upload to Nexus') {
-    steps {
-        withCredentials([usernamePassword(credentialsId: 'nexus-admin', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-            sh """
-            curl -v -u $USER:$PASS --upload-file initial/target/*.jar \
-            http://localhost:8081/repository/maven-releases/com/example/app/1.0.0/app-1.0.0.jar
-            """
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'nexus-admin', usernameVariable: 'USR', passwordVariable: 'PASS')]) {
+                    sh """
+                        curl -v -u $USR:$PASS \
+                        --upload-file initial/target/*-SNAPSHOT.jar \
+                        http://host.docker.internal:8081/repository/maven-releases/com/example/app/1.0.0/app-1.0.0.jar
+                    """
+                }
+            }
         }
-    }
-}
-
 
         stage('Archive Artifact') {
             steps {

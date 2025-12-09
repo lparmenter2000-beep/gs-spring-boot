@@ -10,13 +10,15 @@ pipeline {
 
         stage('Build JAR') {
             steps {
-                sh "./mvnw clean package"
+                dir('complete') {
+                    sh "./mvnw clean package"
+                }
             }
         }
 
         stage('Archive Artifact') {
             steps {
-                archiveArtifacts artifacts: 'initial/target/*.jar', fingerprint: true
+                archiveArtifacts artifacts: 'complete/target/*.jar', fingerprint: true
             }
         }
     }
